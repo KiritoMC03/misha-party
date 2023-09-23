@@ -30,5 +30,5 @@ async fn main() -> std::io::Result<()> {
 
 #[get("/")]
 async fn main_page() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
+    HttpResponse::Ok().body("Misha - pidor!")
 }

@@ -10,7 +10,7 @@ use actix_web:: {
 };
 
 const IP : &str = "0.0.0.0";
-const PORT : &str = "5000";
+const PORT : &str = "8000";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

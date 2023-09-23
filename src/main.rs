@@ -19,9 +19,10 @@ async fn main() -> std::io::Result<()> {
         .parse()
         .expect("PORT must be a number");
 
-    let app = App::new()
-            .service(main_page);
-    HttpServer::new(|| {app})
+    HttpServer::new(move || {
+        App::new()
+            .service(main_page)
+    })
         .bind((IP, port))?
         .run()
         .await

@@ -124,6 +124,38 @@ function setConnectedStatus(status) {
     statusDiv.className = (status) ? "connected" : "reconnecting";
 }
 
+
+
+
+function record() {
+    console.log("enter");
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+
+            const audioChunks = [];
+            mediaRecorder.addEventListener("dataavailable", event => {
+                audioChunks.push(event.data);
+                console.log("push");
+                mediaRecorder.stop();
+            });
+
+            mediaRecorder.addEventListener("stop", () => {
+                const audioBlob = new Blob(audioChunks);
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                audio.play();
+                console.log("play");
+                record();
+            });
+        });
+}
+
+
+
+
+
 // Let's go! Initialize the world.
 function init() {
     // Initialize some rooms.
@@ -175,28 +207,3 @@ init();
 
 
 
-
-
-function record() {
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start();
-
-            const audioChunks = [];
-            mediaRecorder.addEventListener("dataavailable", event => {
-                audioChunks.push(event.data);
-                console.log("push");
-                mediaRecorder.stop();
-            });
-
-            mediaRecorder.addEventListener("stop", () => {
-                const audioBlob = new Blob(audioChunks);
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-                audio.play();
-                console.log("play");
-                record();
-            });
-        });
-}

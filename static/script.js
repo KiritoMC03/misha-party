@@ -186,6 +186,7 @@ function record() {
             const audioChunks = [];
             mediaRecorder.addEventListener("dataavailable", event => {
                 audioChunks.push(event.data);
+                console.log("push");
                 mediaRecorder.stop();
             });
 
@@ -194,6 +195,7 @@ function record() {
                 const audioUrl = URL.createObjectURL(audioBlob);
                 const audio = new Audio(audioUrl);
                 audio.play();
+                console.log("play");
                 record();
             });
         });

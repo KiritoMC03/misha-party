@@ -137,8 +137,7 @@ function record() {
             const audioChunks = [];
             mediaRecorder.addEventListener("dataavailable", event => {
                 audioChunks.push(event.data);
-                console.log("push");
-                mediaRecorder.stop();
+                console.log("data pushed");
             });
 
             mediaRecorder.addEventListener("stop", () => {
@@ -147,8 +146,11 @@ function record() {
                 const audio = new Audio(audioUrl);
                 audio.play();
                 console.log("play");
-                record();
             });
+
+            setTimeout(() => {
+                mediaRecorder.stop();
+            }, 3000);
         });
 }
 
@@ -199,10 +201,10 @@ function init() {
 
     // Subscribe to server-sent events.
     subscribe("/events");
-    record();
 }
 
 init();
+record();
 
 
 

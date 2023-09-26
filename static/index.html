@@ -1,49 +1,95 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="utf-8">
-    <title>Rocket Rooms</title>
-    <link rel="stylesheet" href="/reset.css">
-    <link rel="stylesheet" href="/style.css">
-    <script src="/script.js" charset="utf-8" defer></script>
+    <title>WebRTC Post example</title>
+    <style>
+        body {
+            background: black;
+            color: white;
+        }
+    </style>
 </head>
+
 <body>
-<main>
-    <div id="sidebar">
-        <div id="status" class="pending"></div>
+Enable
+<button id="cam" onClick="startCam()">Cam</button>
+<button id="mic" onClick="startMic()">Mic</button>
+<button id="data" onClick="startDataChannel()">Data</button>
+Start
+<button id="rtc" onClick="startRtc()">Connect</button>
+<script>
+    let streamCam;
+    let streamMic;
+    let startChannel = false;
+    let dataChannel;
+    let rtc = new RTCPeerConnection();
+    const byId = (id) => document.getElementById(id);
+    const byTag = (tag) => [].slice.call(document.getElementsByTagName(tag));
+    async function startCam() {
+        byId('cam').disabled = true;
+        byId('rtc').disabled = true;
+        streamCam = await navigator.mediaDevices.getUserMedia({
+            video: true,
+        });
+        byId('rtc').disabled = false;
+    }
+    async function startMic() {
+        byId('mic').disabled = true;
+        byId('rtc').disabled = true;
+        streamMic = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+        });
+        byId('rtc').disabled = false;
+    }
+    async function startDataChannel() {
+        byId('data').disabled = true;
+        startChannel = true;
+    }
+    async function startRtc() {
+        byTag('button').forEach(b => b.disabled = true);
+        if (startChannel) {
+            dataChannel = rtc.createDataChannel("myChannel");
+            dataChannel.onopen = () => {
+                console.log("datachannel open");
+            };
+            dataChannel.onclose = () => {
+                console.log("datachannel close");
+            };
+            let counter = 0;
+            setInterval(() => {
+                if (dataChannel.readyState != 'open') {
+                    return;
+                }
+                dataChannel.send(`Counter ${counter}`);
+                counter++;
+            }, 1000);
+        }
+        if (streamCam) {
+            rtc.addTrack(streamCam.getTracks()[0], streamCam);
+        }
+        if (streamMic) {
+            rtc.addTrack(streamMic.getTracks()[0], streamMic);
+        }
+        const offer = await rtc.createOffer();
+        rtc.setLocalDescription(offer);
+        console.log(offer.sdp.split('\r\n'));
 
-        <div id="room-list">
-            <template id="room">
-                <button class="room"></button>
-            </template>
-        </div>
+        const res = await fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(offer),
+        });
 
-        <form id="new-room">
-            <input type="text" name="name" id="name" autocomplete="off"
-                   placeholder="new room..." maxlength="29"></input>
-            <button type="submit">+</button>
-        </form>
-    </div>
+        const answer = await res.json();
+        rtc.setRemoteDescription(answer);
+        console.log(answer.sdp.split('\r\n'));
 
-    <div id="content">
 
-        <div id="messages">
-            <template id="message">
-                <div class="message">
-                    <span class="username"></span>
-                    <span class="text"></span>
-                </div>
-            </template>
-        </div>
-
-        <form id="new-message">
-            <input type="text" name="username" id="username" maxlength="19"
-                   placeholder="guest" autocomplete="off">
-            <input type="text" name="message" id="message" autocomplete="off"
-                   placeholder="Send a message..." autofocus>
-            <button type="submit" id="send">Send</button>
-        </form>
-    </div>
-</main>
+    }
+</script>
 </body>
+
 </html>

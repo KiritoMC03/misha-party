@@ -13,6 +13,7 @@ use str0m::IceConnectionState;
 use str0m::{Candidate, Event, Input, Output, Rtc, RtcError};
 
 use std::net::IpAddr;
+use rocket::log::private::__private_api::log;
 use rocket::serde::json::Json;
 use systemstat::{Platform, System};
 
@@ -70,12 +71,14 @@ fn run(mut rtc: Rtc, socket: UdpSocket) -> Result<(), RtcError> {
             Output::Timeout(v) => v,
 
             Output::Transmit(v) => {
+                println!("content: {:?}, {:?}", &v.contents, v.destination);
                 socket.send_to(&v.contents, v.destination)?;
                 continue;
             }
 
             Output::Event(v) => {
                 if v == Event::IceConnectionStateChange(IceConnectionState::Disconnected) {
+                    println!("disconnect");
                     return Ok(());
                 }
                 continue;
@@ -113,6 +116,7 @@ fn run(mut rtc: Rtc, socket: UdpSocket) -> Result<(), RtcError> {
             },
         };
 
+        println!("input: {:?}", input);
         rtc.handle_input(input)?;
     }
 }

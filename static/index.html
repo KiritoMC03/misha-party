@@ -85,9 +85,8 @@ Start
 
         const answer = await res.json();
         rtc.setRemoteDescription(answer);
+        console.log("answer result:")
         console.log(answer.sdp.split('\r\n'));
-
-
     }
 </script>
 </body>

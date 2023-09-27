@@ -68,7 +68,10 @@ fn run(mut rtc: Rtc, socket: UdpSocket) -> Result<(), RtcError> {
         // Poll output until we get a timeout. The timeout means we are either awaiting UDP socket input
         // or the timeout to happen.
         let timeout = match rtc.poll_output()? {
-            Output::Timeout(v) => v,
+            Output::Timeout(v) => {
+                println!("timeout");
+                v
+            }
 
             Output::Transmit(v) => {
                 println!("content: {:?}, {:?}", &v.contents, v.destination);
@@ -77,6 +80,7 @@ fn run(mut rtc: Rtc, socket: UdpSocket) -> Result<(), RtcError> {
             }
 
             Output::Event(v) => {
+                println!("event");
                 if v == Event::IceConnectionStateChange(IceConnectionState::Disconnected) {
                     println!("disconnect");
                     return Ok(());
@@ -89,6 +93,7 @@ fn run(mut rtc: Rtc, socket: UdpSocket) -> Result<(), RtcError> {
 
         // socket.set_read_timeout(Some(0)) is not ok
         if timeout.is_zero() {
+            println!("timeout zero");
             rtc.handle_input(Input::Timeout(Instant::now()))?;
             continue;
         }
@@ -98,6 +103,7 @@ fn run(mut rtc: Rtc, socket: UdpSocket) -> Result<(), RtcError> {
 
         let input = match socket.recv_from(&mut buf) {
             Ok((n, source)) => {
+                println!("read ok");
                 buf.truncate(n);
                 Input::Receive(
                     Instant::now(),
@@ -111,12 +117,18 @@ fn run(mut rtc: Rtc, socket: UdpSocket) -> Result<(), RtcError> {
 
             Err(e) => match e.kind() {
                 // Expected error for set_read_timeout(). One for windows, one for the rest.
-                ErrorKind::WouldBlock | ErrorKind::TimedOut => Input::Timeout(Instant::now()),
-                _ => return Err(e.into()),
+                ErrorKind::WouldBlock | ErrorKind::TimedOut => {
+                    println!("read error 1");
+                    Input::Timeout(Instant::now())
+                },
+                _ => {
+                    println!("read error 2");
+                    return Err(e.into())
+                },
             },
         };
 
-        println!("input: {:?}", input);
+        println!("input end: {:?}", input);
         rtc.handle_input(input)?;
     }
 }

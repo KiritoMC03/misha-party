@@ -1,6 +1,6 @@
 use std::io::ErrorKind;
 use std::net::UdpSocket;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process;
 use std::thread;
 use std::time::Instant;
@@ -13,12 +13,13 @@ use str0m::IceConnectionState;
 use str0m::{Candidate, Event, Input, Output, Rtc, RtcError};
 
 use std::net::IpAddr;
+use rocket::serde::json::Json;
 use systemstat::{Platform, System};
 
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![main_page, events])
+        .mount("/", routes![main_page, web_request])
 }
 
 #[get("/")]
@@ -28,7 +29,7 @@ async fn main_page() -> Option<NamedFile> {
 }
 
 #[post("/", format = "application/json", data = "<offer>")]
-fn web_request(offer: SdpOffer) -> Vec<u8> {
+fn web_request(offer: Json<SdpOffer>) -> String {
     println!("POST HERE");
     let mut rtc = Rtc::new();
 
@@ -43,7 +44,7 @@ fn web_request(offer: SdpOffer) -> Vec<u8> {
     // Create an SDP Answer.
     let answer = rtc
         .sdp_api()
-        .accept_offer(offer)
+        .accept_offer(offer.0)
         .expect("offer to be accepted");
 
     // Launch WebRTC in separate thread.
@@ -54,7 +55,7 @@ fn web_request(offer: SdpOffer) -> Vec<u8> {
         }
     });
 
-    let body = serde_json::to_vec(&answer).expect("answer to serialize");
+    let body = serde_json::to_string(&answer).expect("answer to serialize");
     body
 }
 

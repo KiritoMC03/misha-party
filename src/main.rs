@@ -41,12 +41,15 @@ fn web_request(offer: Json<SdpOffer>) -> String {
     let addr = socket.local_addr().expect("a local socket adddress");
     let candidate = Candidate::host(addr).expect("a host candidate");
     rtc.add_local_candidate(candidate);
+    println!("Addr: {}", addr);
+    println!("offer: {:?}", offer);
 
     // Create an SDP Answer.
     let answer = rtc
         .sdp_api()
         .accept_offer(offer.0)
         .expect("offer to be accepted");
+    println!("answer: {:?}", answer);
 
     // Launch WebRTC in separate thread.
     thread::spawn(|| {

@@ -33,7 +33,8 @@ fn web_request(offer: Json<SdpOffer>) -> String {
     println!("POST HERE");
     let mut rtc = Rtc::new();
 
-    let addr = "0.0.0.0:8080";
+    let addr = select_host_address().to_string() + ":8080";
+    println!("addr: {}", addr);
 
     // Spin up a UDP socket for the RTC
     let socket = UdpSocket::bind(addr).expect("binding a random UDP port");

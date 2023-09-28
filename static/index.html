@@ -72,7 +72,7 @@ Start
             rtc.addTrack(streamMic.getTracks()[0], streamMic);
         }
         const offer = await rtc.createOffer();
-        rtc.setLocalDescription(offer);
+        await rtc.setLocalDescription(offer);
         console.log(offer.sdp.split('\r\n'));
 
         const res = await fetch('', {

@@ -13,7 +13,6 @@ use str0m::IceConnectionState;
 use str0m::{Candidate, Event, Input, Output, Rtc, RtcError};
 
 use std::net::IpAddr;
-use rocket::log::private::__private_api::log;
 use rocket::serde::json::Json;
 use systemstat::{Platform, System};
 
@@ -34,10 +33,10 @@ fn web_request(offer: Json<SdpOffer>) -> String {
     println!("POST HERE");
     let mut rtc = Rtc::new();
 
-    let addr = "0.0.0.0";
+    let addr = "0.0.0.0:8080";
 
     // Spin up a UDP socket for the RTC
-    let socket = UdpSocket::bind(format!("{addr}:0")).expect("binding a random UDP port");
+    let socket = UdpSocket::bind(addr).expect("binding a random UDP port");
     let addr = socket.local_addr().expect("a local socket adddress");
     let candidate = Candidate::host(addr).expect("a host candidate");
     rtc.add_local_candidate(candidate);

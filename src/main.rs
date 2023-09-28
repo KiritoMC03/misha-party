@@ -34,7 +34,7 @@ fn web_request(offer: Json<SdpOffer>) -> String {
     println!("POST HERE");
     let mut rtc = Rtc::new();
 
-    let addr = "154.62.109.84";
+    let addr = "0.0.0.0";
 
     // Spin up a UDP socket for the RTC
     let socket = UdpSocket::bind(format!("{addr}:0")).expect("binding a random UDP port");

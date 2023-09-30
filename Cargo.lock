@@ -703,6 +703,7 @@ name = "misha-party"
 version = "0.1.0"
 dependencies = [
  "rocket",
+ "rocket-client-addr",
  "serde",
  "serde_json",
  "str0m",
@@ -1075,6 +1076,15 @@ dependencies = [
  "ubyte",
  "version_check",
  "yansi 0.5.1",
+]
+
+[[package]]
+name = "rocket-client-addr"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c5ea62cddd81441e4effae0ae0ee956fb4933daac0b96773d837346bc198021b"
+dependencies = [
+ "rocket",
 ]
 
 [[package]]

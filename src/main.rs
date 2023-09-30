@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+
 use std::path::Path;
 use rocket::{get, launch, routes};
 use rocket::fs::NamedFile;
@@ -16,6 +16,6 @@ async fn main_page() -> Option<NamedFile> {
 }
 
 #[get("/")]
-fn index(remote_addr: SocketAddr) -> String {
-    format!("Remote Address: {:?}", remote_addr)
+fn index(a: rocket_client_addr::ClientAddr, b: rocket_client_addr::ClientRealAddr) -> String {
+    format!("Remote Address: {:?}, {:?}", a, b)
 }

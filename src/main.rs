@@ -1,6 +1,6 @@
 use std::path::Path;
 use rocket::fs::NamedFile;
-use rocket::{get, launch, routes};
+use rocket::{catch, catchers, get, launch, Request, routes};
 use rocket_ws::{Stream, WebSocket};
 
 #[launch]
@@ -8,6 +8,7 @@ fn rocket() -> _ {
     rocket::build()
         .mount("/", routes![index, favicon])
         .mount("/", routes![echo_stream])
+        .register("/", catchers![not_found])
 }
 
 #[get("/")]
@@ -30,4 +31,9 @@ fn echo_stream(ws: WebSocket) -> Stream!['static] {
 #[get("/favicon.ico")]
 async fn favicon() -> Option<NamedFile> {
     NamedFile::open(Path::new("static/favicon.ico")).await.ok()
+}
+
+#[catch(404)]
+fn not_found(req: &Request) -> String {
+    format!("Sorry, '{}' is not a valid path.", req.uri())
 }

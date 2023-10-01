@@ -16,7 +16,7 @@ async fn index() -> Option<NamedFile> {
 }
 
 #[get("/echo")]
-fn echo_stream(ws: WebSocket) -> Stream!['static] {
+async fn echo_stream(ws: WebSocket) -> Stream!['static] {
     println!("ws enter 1");
     Stream! { ws =>
         for await message in ws {

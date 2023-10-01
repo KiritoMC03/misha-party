@@ -19,9 +19,12 @@ async fn main_page() -> Option<NamedFile> {
 
 #[get("/ws")]
 fn echo_stream(ws: WebSocket) -> Stream!['static] {
+    println!("ws enter");
     Stream! { ws =>
         for await message in ws {
-            yield message?;
+            let message = message.unwrap();
+            println!("{}", message);
+            yield message;
         }
     }
 }

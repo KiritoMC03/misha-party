@@ -51,6 +51,7 @@ fn not_found(req: &Request) -> String {
 
 struct Test;
 
+#[rocket::async_trait]
 impl Fairing for Test {
     fn info(&self) -> Info {
         Info {
@@ -59,7 +60,7 @@ impl Fairing for Test {
         }
     }
 
-    fn on_request(&self, _req: &mut Request<'_>, _data: &mut Data<'_>) {
+    async fn on_request(&self, _req: &mut Request<'_>, _data: &mut Data<'_>) {
         println!("req for test:_ {}", _req);
     }
 }

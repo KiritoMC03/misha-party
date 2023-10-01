@@ -1,12 +1,12 @@
 use std::path::Path;
 use rocket::fs::NamedFile;
 use rocket::{catch, catchers, get, launch, Request, routes};
-use rocket_ws::{Stream, WebSocket};
+// use rocket_ws::{Stream, WebSocket};
 
 #[launch]
 fn rocket() -> _ {
     let res = rocket::build()
-        .mount("/", routes![index, favicon, echo_stream, echo_text])
+        .mount("/", routes![index, favicon, echo_stream])
         .register("/", catchers![not_found]);
     for route in res.routes() {
         println!("{}", route);
@@ -21,20 +21,16 @@ async fn index() -> Option<NamedFile> {
 }
 
 #[get("/echo")]
-async fn echo_stream(ws: WebSocket) -> Stream!['static] {
+async fn echo_stream() -> String/*Stream!['static]*/ {
     println!("ws enter 1");
-    Stream! { ws =>
-        for await message in ws {
-            let message = message.unwrap();
-            println!("{}", message);
-            yield message;
-        }
-    }
-}
-
-#[get("/echo")]
-async fn echo_text() -> String {
-    "huiyak".to_string()
+    "echo".to_string()
+    // Stream! { ws =>
+    //     for await message in ws {
+    //         let message = message.unwrap();
+    //         println!("{}", message);
+    //         yield message;
+    //     }
+    // }
 }
 
 #[get("/favicon.ico")]

@@ -1,18 +1,29 @@
+use std::env;
 use std::path::Path;
 use rocket::fs::NamedFile;
 use rocket::{catchers, get, launch, routes};
 use rocket_ws::{Stream, WebSocket};
+use args::*;
 
 mod debugging;
 mod catchers;
+mod args;
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build()
+    let args: Vec<String> = env::args().collect();
+    let mut server = rocket::build()
         .mount("/", routes![index, favicon, echo_stream])
-        .register("/", catchers![catchers::not_found])
-        .attach(debugging::RequestLogger)
-        .attach(debugging::WebSocketConnectionLogger)
+        .register("/", catchers![catchers::not_found]);
+
+    if args.contains(&LOG_REQUESTS.to_string()) {
+        server = server.attach(debugging::RequestLogger);
+    }
+    if args.contains(&LOG_WS_CONNECTIONS.to_string()) {
+        server = server.attach(debugging::WebSocketConnectionLogger)
+    }
+
+    server
 }
 
 #[get("/")]

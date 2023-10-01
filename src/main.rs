@@ -6,8 +6,7 @@ use rocket_ws::{Stream, WebSocket};
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index, favicon])
-        .mount("/", routes![echo_stream])
+        .mount("/", routes![index, favicon, echo_stream])
         .register("/", catchers![not_found])
 }
 

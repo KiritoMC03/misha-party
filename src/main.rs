@@ -5,9 +5,14 @@ use rocket_ws::{Stream, WebSocket};
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build()
+    let res = rocket::build()
         .mount("/", routes![index, favicon, echo_stream])
-        .register("/", catchers![not_found])
+        .register("/", catchers![not_found]);
+    for route in res.routes() {
+        println!("{}", route);
+    }
+
+    res
 }
 
 #[get("/")]

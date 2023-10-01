@@ -1,12 +1,12 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use rocket::fs::NamedFile;
 use rocket::{catch, catchers, get, launch, Request, routes};
-// use rocket_ws::{Stream, WebSocket};
+use rocket_ws::{Stream, WebSocket};
 
 #[launch]
 fn rocket() -> _ {
     let res = rocket::build()
-        .mount("/", routes![index, favicon, echo_stream])
+        .mount("/", routes![index, favicon, echo_stream, log_req])
         .register("/", catchers![not_found]);
     for route in res.routes() {
         println!("{}", route);
@@ -20,17 +20,21 @@ async fn index() -> Option<NamedFile> {
     NamedFile::open(Path::new("static/index.html")).await.ok()
 }
 
+#[get("/<p>")]
+async fn log_req(p: PathBuf) {
+    println!("{}", p.as_path().to_str().unwrap());
+}
+
 #[get("/echo")]
-async fn echo_stream() -> String/*Stream!['static]*/ {
+async fn echo_stream(ws: WebSocket) -> Stream!['static] {
     println!("ws enter 1");
-    "echo".to_string()
-    // Stream! { ws =>
-    //     for await message in ws {
-    //         let message = message.unwrap();
-    //         println!("{}", message);
-    //         yield message;
-    //     }
-    // }
+    Stream! { ws =>
+        for await message in ws {
+            let message = message.unwrap();
+            println!("{}", message);
+            yield message;
+        }
+    }
 }
 
 #[get("/favicon.ico")]

@@ -6,12 +6,12 @@ use rocket_ws::{Stream, WebSocket};
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![main_page, favicon])
-        .mount("/ws", routes![echo_stream])
+        .mount("/", routes![index, favicon])
+        .mount("/echo", routes![echo_stream])
 }
 
 #[get("/")]
-async fn main_page() -> Option<NamedFile> {
+async fn index() -> Option<NamedFile> {
     NamedFile::open(Path::new("static/index.html")).await.ok()
 }
 

@@ -6,7 +6,7 @@ use rocket_ws::{Stream, WebSocket};
 #[launch]
 fn rocket() -> _ {
     let res = rocket::build()
-        .mount("/", routes![index, favicon, echo_stream])
+        .mount("/", routes![index, favicon, echo_stream, echo_text])
         .register("/", catchers![not_found]);
     for route in res.routes() {
         println!("{}", route);
@@ -30,6 +30,11 @@ async fn echo_stream(ws: WebSocket) -> Stream!['static] {
             yield message;
         }
     }
+}
+
+#[get("/echo")]
+async fn echo_text() -> String {
+    "huiyak".to_string()
 }
 
 #[get("/favicon.ico")]

@@ -10,6 +10,7 @@
 
     socket.onopen = () => {
         console.log("WebSocket connection established.");
+        sendMessage();
         // Send data or perform actions when the connection is open.
     };
 

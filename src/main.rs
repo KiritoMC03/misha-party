@@ -60,7 +60,28 @@ impl Fairing for Test {
         }
     }
 
-    async fn on_request(&self, _req: &mut Request<'_>, _data: &mut Data<'_>) {
-        println!("req for test:_ {}", _req);
+    async fn on_request(&self, req: &mut Request<'_>, _data: &mut Data<'_>) {
+        println!("req for test:_ {}", req);
+
+        use tungstenite::handshake::derive_accept_key;
+        use rocket::http::uncased::eq;
+
+        let headers = req.headers();
+        let is_upgrade = headers.get("Connection")
+            .any(|h| h.split(',').any(|v| eq(v.trim(), "upgrade")));
+
+        let is_ws = headers.get("Upgrade")
+            .any(|h| h.split(',').any(|v| eq(v.trim(), "websocket")));
+
+        let is_13 = headers.get_one("Sec-WebSocket-Version").map_or(false, |v| v == "13");
+        let key = headers.get_one("Sec-WebSocket-Key").map(|k| derive_accept_key(k.as_bytes()));
+        match key {
+            Some(key) if is_upgrade && is_ws && is_13 => {
+                println!("key success: {key}");
+            },
+            Some(_) | None => {
+                println!("key failed: {} - {} - {}", is_upgrade, is_ws, is_13);
+            }
+        };
     }
 }

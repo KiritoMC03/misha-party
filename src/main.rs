@@ -7,7 +7,7 @@ use rocket_ws::{Stream, WebSocket};
 fn rocket() -> _ {
     rocket::build()
         .mount("/", routes![index, favicon])
-        .mount("/echo", routes![echo_stream])
+        .mount("/", routes![echo_stream])
 }
 
 #[get("/")]
@@ -15,7 +15,7 @@ async fn index() -> Option<NamedFile> {
     NamedFile::open(Path::new("static/index.html")).await.ok()
 }
 
-#[get("/")]
+#[get("/echo")]
 fn echo_stream(ws: WebSocket) -> Stream!['static] {
     println!("ws enter 1");
     Stream! { ws =>

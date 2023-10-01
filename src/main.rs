@@ -6,7 +6,7 @@ use rocket_ws::{Stream, WebSocket};
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![main_page, echo_stream, favicon])
+        .mount("/", routes![main_page, echo_stream, favicon, echo_stream_s])
 }
 
 #[get("/")]
@@ -16,7 +16,19 @@ async fn main_page() -> Option<NamedFile> {
 
 #[get("/ws")]
 fn echo_stream(ws: WebSocket) -> Stream!['static] {
-    println!("ws enter");
+    println!("ws enter 1");
+    Stream! { ws =>
+        for await message in ws {
+            let message = message.unwrap();
+            println!("{}", message);
+            yield message;
+        }
+    }
+}
+
+#[get("/ws/ws")]
+fn echo_stream_s(ws: WebSocket) -> Stream!['static] {
+    println!("ws enter 2");
     Stream! { ws =>
         for await message in ws {
             let message = message.unwrap();

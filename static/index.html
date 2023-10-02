@@ -54,59 +54,6 @@
 
 
     async function startStreaming() {
-        let mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
-
-        // Create a MediaRecorder instance to record audio
-        let mediaRecorder = new MediaRecorder(mediaStream);
-        const pause = async () => {
-            for (let i = 0; i < 100; i++) {
-                await delay(100);
-                mediaRecorder.pause();
-            }
-        };
-
-        // Event listener for dataavailable event
-        mediaRecorder.ondataavailable = (event) => {
-            console.log("ondataavailable")
-            if (event.data.size > 0) {
-                console.log("not zero")
-                // sendAudioChunk(event.data);
-                // const audioData = await event.data.arrayBuffer();
-                // socket.send(audioData);
-            }
-            mediaRecorder.resume();
-        };
-
-        mediaRecorder.onresume = (e) => {
-            pause();
-        };
-
-        // Start recording
-        mediaRecorder.start();
-        await pause();
-
-        return;
-
-
-        navigator.mediaDevices.getUserMedia({audio: true})
-            .then(stream => {
-                const mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.start();
-
-                const audioChunks = [];
-                mediaRecorder.addEventListener("dataavailable", async event => {
-                    audioChunks.push(event.data);
-
-                    if (event.data.size > 0) {
-                        console.log("not zero")
-                        console.log("mediaRecorder created")
-                        const audioData = await event.data.arrayBuffer();
-                        socket.send(audioData);
-                    }
-                });
-            });
-        return;
-
         console.log("start streaming")
         navigator.mediaDevices.getUserMedia({audio: true})
             .then(stream => {
@@ -114,6 +61,12 @@
                 const mediaRecorder = new MediaRecorder(stream);
                 mediaRecorder.start();
 
+                mediaRecorder.onstart = async (_) => {
+                    while (true) { // ToDo:
+                        await timeout(100);
+                        mediaRecorder.requestData();
+                    }
+                };
 
                 mediaRecorder.ondataavailable = async (e) => {
                     console.log("data available")
@@ -125,6 +78,10 @@
                     }
                 };
             });
+    }
+
+    function timeout(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 </script>
 </body>

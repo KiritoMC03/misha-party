@@ -52,11 +52,18 @@
         socket.send(message);
     }
 
+
     async function startStreaming() {
         let mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
 
         // Create a MediaRecorder instance to record audio
         let mediaRecorder = new MediaRecorder(mediaStream);
+        const pause = async () => {
+            for (let i = 0; i < 100; i++) {
+                await delay(100);
+                mediaRecorder.pause();
+            }
+        };
 
         // Event listener for dataavailable event
         mediaRecorder.ondataavailable = (event) => {
@@ -67,10 +74,16 @@
                 // const audioData = await event.data.arrayBuffer();
                 // socket.send(audioData);
             }
+            mediaRecorder.resume();
+        };
+
+        mediaRecorder.onresume = (e) => {
+            pause();
         };
 
         // Start recording
         mediaRecorder.start();
+        await pause();
 
         return;
 

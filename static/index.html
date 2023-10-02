@@ -56,15 +56,20 @@
         console.log("start streaming")
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
+                console.log("mediaRecorder created")
                 const mediaRecorder = new MediaRecorder(stream);
                 mediaRecorder.start();
 
-                mediaRecorder.addEventListener("dataavailable", async event => {
-                    if (event.data.size > 0) {
-                        const audioData = await event.data.arrayBuffer();
+
+                mediaRecorder.ondataavailable = async (e) => {
+                    console.log("data available")
+                    if (e.data.size > 0) {
+                        console.log("not zero")
+                        console.log("mediaRecorder created")
+                        const audioData = await e.data.arrayBuffer();
                         socket.send(audioData);
                     }
-                });
+                };
             });
     }
 </script>

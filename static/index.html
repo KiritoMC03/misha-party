@@ -32,6 +32,10 @@
     socket.onerror = (error) => {
         console.error(`WebSocket error: ${error.message}`);
     };
+    for (let i = 0; i < 100; i++) {
+        await delay(500);
+        sendMessage();
+    }
 
     // Send data to the server
     function sendMessage() {

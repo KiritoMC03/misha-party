@@ -11,10 +11,6 @@
     const delay = ms => new Promise(res => setTimeout(res, ms));
     const socket = new WebSocket("wss://mishka-party.online/echo");
     // const socket = new WebSocket("ws://127.0.0.1:8000/echo");
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    let mediaStream;
-    let audioInput;
-    let isStreaming = false;
 
     const startStreamingButton = document.getElementById('startStreaming');
     startStreamingButton.addEventListener('click', startStreaming);
@@ -64,7 +60,7 @@
                 mediaRecorder.start();
 
                 mediaRecorder.addEventListener("dataavailable", event => {
-                    socket.send(event.data)
+                    socket.send(event.data.arrayBuffer());
                 });
             });
     }

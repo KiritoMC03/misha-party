@@ -10,6 +10,10 @@
     const delay = ms => new Promise(res => setTimeout(res, ms));
     const socket = new WebSocket("wss://mishka-party.online/echo");
     // const socket = new WebSocket("ws://127.0.0.1:8000/echo");
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let mediaStream;
+    let audioInput;
+    let isStreaming = false;
 
     socket.onopen = () => {
         console.log("WebSocket connection established.");
@@ -34,7 +38,7 @@
         console.error(`WebSocket error: ${error.message}`);
     };
 
-
+    startStreaming();
     const yourFunction = async () => {
         for (let i = 0; i < 100; i++) {
             await delay(500);
@@ -47,6 +51,26 @@
     function sendMessage() {
         const message = "Hello, WebSocket Server!";
         socket.send(message);
+    }
+
+    function startStreaming() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function (stream) {
+                mediaStream = stream;
+                audioInput = audioContext.createMediaStreamSource(stream);
+
+                // Send audio data to the WebSocket
+                audioInput.connect(audioContext.destination);
+                audioInput.onaudioprocess = function (e) {
+                    if (isStreaming) {
+                        const audioData = e.inputBuffer.getChannelData(0); // Get audio data from the microphone
+                        socket.send(audioData.buffer); // Send audio data to the server
+                    }
+                };
+            })
+            .catch(function (error) {
+                console.error('Error accessing the microphone:', error);
+            });
     }
 </script>
 </body>

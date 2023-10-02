@@ -59,8 +59,11 @@
                 const mediaRecorder = new MediaRecorder(stream);
                 mediaRecorder.start();
 
-                mediaRecorder.addEventListener("dataavailable", event => {
-                    socket.send(event.data.arrayBuffer());
+                mediaRecorder.addEventListener("dataavailable", async event => {
+                    if (event.data.size > 0) {
+                        const audioData = await event.data.arrayBuffer();
+                        socket.send(audioData);
+                    }
                 });
             });
     }

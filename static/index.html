@@ -59,13 +59,13 @@
                 mediaRecorder.start();
 
                 const audioChunks = [];
-                mediaRecorder.addEventListener("dataavailable", event => {
+                mediaRecorder.addEventListener("dataavailable", async event => {
                     audioChunks.push(event.data);
 
-                    if (e.data.size > 0) {
+                    if (event.data.size > 0) {
                         console.log("not zero")
                         console.log("mediaRecorder created")
-                        const audioData = e.data.arrayBuffer();
+                        const audioData = await event.data.arrayBuffer();
                         socket.send(audioData);
                     }
                 });

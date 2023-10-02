@@ -57,22 +57,15 @@
     }
 
     function startStreaming() {
+        console.log("start streaming")
         navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(function (stream) {
-                mediaStream = stream;
-                audioInput = audioContext.createMediaStreamSource(stream);
+            .then(stream => {
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
 
-                // Send audio data to the WebSocket
-                audioInput.connect(audioContext.destination);
-                audioInput.onaudioprocess = function (e) {
-                    if (isStreaming) {
-                        const audioData = e.inputBuffer.getChannelData(0); // Get audio data from the microphone
-                        socket.send(audioData.buffer); // Send audio data to the server
-                    }
-                };
-            })
-            .catch(function (error) {
-                console.error('Error accessing the microphone:', error);
+                mediaRecorder.addEventListener("dataavailable", event => {
+                    socket.send(event.data)
+                });
             });
     }
 </script>

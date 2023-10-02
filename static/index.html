@@ -7,6 +7,7 @@
 <body>
 <p>Hello!</p>
 <script>
+    const delay = ms => new Promise(res => setTimeout(res, ms));
     const socket = new WebSocket("wss://mishka-party.online/echo");
     // const socket = new WebSocket("ws://127.0.0.1:8000/echo");
 
@@ -32,11 +33,16 @@
     socket.onerror = (error) => {
         console.error(`WebSocket error: ${error.message}`);
     };
-    for (let i = 0; i < 100; i++) {
-        await delay(500);
-        sendMessage();
-    }
 
+
+    const yourFunction = async () => {
+        for (let i = 0; i < 100; i++) {
+            await delay(500);
+            sendMessage();
+        }
+    };
+
+    yourFunction();
     // Send data to the server
     function sendMessage() {
         const message = "Hello, WebSocket Server!";

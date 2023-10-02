@@ -52,8 +52,30 @@
         socket.send(message);
     }
 
-    function startStreaming() {
-        navigator.mediaDevices.getUserMedia({ audio: true })
+    async function startStreaming() {
+        let mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
+
+        // Create a MediaRecorder instance to record audio
+        let mediaRecorder = new MediaRecorder(mediaStream);
+
+        // Event listener for dataavailable event
+        mediaRecorder.ondataavailable = (event) => {
+            console.log("ondataavailable")
+            if (event.data.size > 0) {
+                console.log("not zero")
+                // sendAudioChunk(event.data);
+                // const audioData = await event.data.arrayBuffer();
+                // socket.send(audioData);
+            }
+        };
+
+        // Start recording
+        mediaRecorder.start();
+
+        return;
+
+
+        navigator.mediaDevices.getUserMedia({audio: true})
             .then(stream => {
                 const mediaRecorder = new MediaRecorder(stream);
                 mediaRecorder.start();
@@ -69,22 +91,11 @@
                         socket.send(audioData);
                     }
                 });
-
-                mediaRecorder.addEventListener("stop", () => {
-                    const audioBlob = new Blob(audioChunks);
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    const audio = new Audio(audioUrl);
-                    audio.play();
-                });
-
-                setTimeout(() => {
-                    mediaRecorder.stop();
-                }, 3000);
             });
         return;
 
         console.log("start streaming")
-        navigator.mediaDevices.getUserMedia({ audio: true })
+        navigator.mediaDevices.getUserMedia({audio: true})
             .then(stream => {
                 console.log("mediaRecorder created")
                 const mediaRecorder = new MediaRecorder(stream);

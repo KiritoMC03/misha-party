@@ -61,6 +61,13 @@
                 const audioChunks = [];
                 mediaRecorder.addEventListener("dataavailable", event => {
                     audioChunks.push(event.data);
+
+                    if (e.data.size > 0) {
+                        console.log("not zero")
+                        console.log("mediaRecorder created")
+                        const audioData = e.data.arrayBuffer();
+                        socket.send(audioData);
+                    }
                 });
 
                 mediaRecorder.addEventListener("stop", () => {

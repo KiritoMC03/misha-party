@@ -1,8 +1,20 @@
 use rocket::fairing::{Fairing, Info, Kind};
-use rocket::{Data, Request};
+use rocket::{Build, Data, Request, Rocket};
+use crate::args::Args;
 
 pub struct RequestLogger;
 pub struct WebSocketConnectionLogger;
+
+pub fn attach(mut builder: Rocket<Build>, args: &Args) -> Rocket<Build> {
+    if args.log_requests() {
+        builder = builder.attach(RequestLogger);
+    }
+    if args.log_ws_connections() {
+        builder = builder.attach(WebSocketConnectionLogger)
+    }
+
+    builder
+}
 
 #[rocket::async_trait]
 impl Fairing for RequestLogger {

@@ -24,7 +24,7 @@ fn rocket() -> _ {
 
 #[get("/")]
 async fn index() -> Option<NamedFile> {
-    NamedFile::open(Path::new("static/index.html")).await.ok()
+    NamedFile::open(Path::new("../../static/index.html")).await.ok()
 }
 
 #[get("/echo")]
@@ -45,7 +45,7 @@ async fn echo_stream(_ws: WebSocket, _sockets: &State<Sockets>) {
 
 #[get("/favicon.ico")]
 async fn favicon() -> Option<NamedFile> {
-    NamedFile::open(Path::new("static/favicon.ico")).await.ok()
+    NamedFile::open(Path::new("../../static/favicon.ico")).await.ok()
 }
 
 struct Sockets {

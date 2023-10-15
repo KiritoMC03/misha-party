@@ -1,20 +1,25 @@
-use std::path::Path;
-use rocket::fs::NamedFile;
-use rocket::{catchers, get, launch, routes, State};
-use rocket::tokio::sync::Mutex;
-use rocket_ws::WebSocket;
 use args::*;
+use rocket::fs::NamedFile;
+use rocket::tokio::sync::Mutex;
+use rocket::{catchers, get, launch, routes};
+use rocket_ws::WebSocket;
+use std::path::Path;
 
-mod debugging;
-mod catchers;
 mod args;
+mod catchers;
+mod debugging;
 
 #[launch]
 fn rocket() -> _ {
+    println!("{:?}", std::env::current_dir());
+    println!("{:?}", std::env::args().collect::<String>());
+
     let args = Args::read_env();
     let mut server = rocket::build()
-        .mount("/", routes![index, favicon, echo_stream])
-        .manage(Sockets{ list: Mutex::new(Vec::new()) })
+        .mount("/", routes![index, favicon, js, wasm])
+        .manage(Sockets {
+            _list: Mutex::new(Vec::new()),
+        })
         .register("/", catchers![catchers::not_found]);
 
     server = debugging::attach(server, &args);
@@ -24,30 +29,46 @@ fn rocket() -> _ {
 
 #[get("/")]
 async fn index() -> Option<NamedFile> {
-    NamedFile::open(Path::new("../../static/index.html")).await.ok()
+    println!("{:?}", std::env::current_dir());
+    NamedFile::open(Path::new("./static/index.html")).await.ok()
 }
-
-#[get("/echo")]
-async fn echo_stream(_ws: WebSocket, _sockets: &State<Sockets>) {
-    // sockets.list.lock().await.push(ws);
-
-    // ws.stream(|io| {
-    //
-    // })
-    // Stream! { ws =>
-    //     for await message in ws {
-    //         let message = message.unwrap();
-    //         println!("WebSocket message: \"{}\"", message);
-    //         yield message;
-    //     }
-    // }
-}
+// #[get("/echo")]
+// async fn echo_stream(_ws: WebSocket, _sockets: &State<Sockets>) {
+//     // sockets.list.lock().await.push(ws);
+//
+//     // ws.stream(|io| {
+//     //
+//     // })
+//     // Stream! { ws =>
+//     //     for await message in ws {
+//     //         let message = message.unwrap();
+//     //         println!("WebSocket message: \"{}\"", message);
+//     //         yield message;
+//     //     }
+//     // }
+// }
 
 #[get("/favicon.ico")]
 async fn favicon() -> Option<NamedFile> {
-    NamedFile::open(Path::new("../../static/favicon.ico")).await.ok()
+    NamedFile::open(Path::new("./static/favicon.ico"))
+        .await
+        .ok()
+}
+
+#[get("/yew.js")]
+async fn js() -> Option<NamedFile> {
+    NamedFile::open(Path::new("./static/yew.js"))
+        .await
+        .ok()
+}
+
+#[get("/yew.wasm")]
+async fn wasm() -> Option<NamedFile> {
+    NamedFile::open(Path::new("./static/yew.wasm"))
+        .await
+        .ok()
 }
 
 struct Sockets {
-    pub list: Mutex<Vec<WebSocket>>,
+    pub _list: Mutex<Vec<WebSocket>>,
 }

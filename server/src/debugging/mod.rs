@@ -1,6 +1,6 @@
+use crate::args::Args;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::{Build, Data, Request, Rocket};
-use crate::args::Args;
 
 pub struct RequestLogger;
 pub struct WebSocketConnectionLogger;
@@ -40,29 +40,36 @@ impl Fairing for WebSocketConnectionLogger {
     }
 
     async fn on_request(&self, req: &mut Request<'_>, _data: &mut Data<'_>) {
-        use tungstenite::handshake::derive_accept_key;
         use rocket::http::uncased::eq;
+        use tungstenite::handshake::derive_accept_key;
 
         let headers = req.headers();
-        let is_upgrade = headers.get("Connection")
+        let is_upgrade = headers
+            .get("Connection")
             .any(|h| h.split(',').any(|v| eq(v.trim(), "upgrade")));
 
-        let is_ws = headers.get("Upgrade")
+        let is_ws = headers
+            .get("Upgrade")
             .any(|h| h.split(',').any(|v| eq(v.trim(), "websocket")));
 
-        let is_13 = headers.get_one("Sec-WebSocket-Version").map_or(false, |v| v == "13");
-        let key = headers.get_one("Sec-WebSocket-Key").map(|k| derive_accept_key(k.as_bytes()));
+        let is_13 = headers
+            .get_one("Sec-WebSocket-Version")
+            .map_or(false, |v| v == "13");
+        let key = headers
+            .get_one("Sec-WebSocket-Key")
+            .map(|k| derive_accept_key(k.as_bytes()));
         match key {
             Some(key) if is_upgrade && is_ws && is_13 => {
                 println!("WebSocket connection success. Key: {key}");
-            },
+            }
             Some(_) | None => {
                 println!(
                     "WebSocket connection failed:
                 Has \"Connection: upgrade\" :{}
                 Has \"Upgrade: websocket\": {}
                 Has \"Sec-WebSocket-Version: 13\": {}",
-                         is_upgrade, is_ws, is_13);
+                    is_upgrade, is_ws, is_13
+                );
             }
         };
     }

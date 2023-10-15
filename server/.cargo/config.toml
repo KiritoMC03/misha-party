@@ -1,3 +1,4 @@
-#[env]
+[env]
 #OPENSSL_NO_VENDOR = "1"
 #OPENSSL_DIR = "D:/Varia/Projects/C++Projects/vcpkg/packages/openssl_x64-windows-static-md"
+CARGO_MANIFEST_DIR = "./../../../"

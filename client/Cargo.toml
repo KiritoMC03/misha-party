@@ -2,3 +2,9 @@
 name = "client"
 version = "0.1.0"
 edition = "2021"
+
+[dependencies]
+wasm-logger = "0.2.0"
+web-sys = "0.3.64"
+yew = { version = "0.21.0", features = ["csr"] }
+log = "0.4.20"

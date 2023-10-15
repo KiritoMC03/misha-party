@@ -1,0 +1,74 @@
+[tasks.build]
+run_task = [
+    { name = [
+        "project",
+        "trunk",
+        "trunk-postprocess",
+    ]},
+]
+
+[tasks.project]
+command = "cargo"
+args = ["build", "--release"]
+
+[tasks.trunk]
+command = "trunk"
+args = ["build", "--release"]
+#-------------------------------------------
+[tasks.debug]
+run_task = [
+    { name = [
+        "project-debug",
+        "trunk-debug",
+        "trunk-postprocess",
+    ]},
+]
+
+[tasks.project-debug]
+command = "cargo"
+args = ["build"]
+
+[tasks.trunk-debug]
+command = "trunk"
+args = ["build"]
+#-------------------------------------------
+[tasks.trunk-postprocess]
+script_runner = "@rust"
+script = '''
+//! ```cargo
+//! [dependencies]
+//! glob = "0.3.1"
+//! ```
+fn main() {
+    rename("js");
+    rename("wasm");
+}
+
+fn rename(extension: &str) {
+    use std::fs::File;
+    use std::io::Read;
+    use std::io::Write;
+
+    let new_name = format!("yew.{}", extension);
+    let file =
+        glob::glob(format!("./../static/*.{}", extension).as_str())
+            .expect("Failed to read glob pattern")
+            .nth(0)
+            .unwrap()
+            .unwrap();
+    let dir = file.parent().expect("Failed to get file parent");
+    let file_name = file.file_name().expect("Failed to get file name");
+    std::fs::rename(
+        file.to_str().expect("Failed to unwrap file name"),
+        dir.join(new_name.as_str()))
+        .expect("Failed to rename file");
+
+    let html_path = "./../static/index.html";
+    let mut html = File::open(html_path).expect("Failed to open index.html");
+    let mut content = String::new();
+    html.read_to_string(&mut content).expect("Failed to read index.html");
+    content = content.replace(file_name.to_str().unwrap(), new_name.as_str());
+    let mut file = File::create(html_path).expect("Failed to open index.html in write mode");
+    file.write_all(content.as_bytes()).expect("Failed to write index.html");
+}
+'''

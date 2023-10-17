@@ -1,5 +1,4 @@
 use yew::prelude::*;
-use gloo_net::http::Request;
 use serde::Deserialize;
 
 #[derive(Clone, PartialEq, Deserialize)]
@@ -64,23 +63,6 @@ fn app() -> Html {
         <VideoDetails video={video.clone()} />
     });
 
-    {
-        let videos = videos.clone();
-        use_effect_with((), move |_| {
-            let videos = videos.clone();
-            wasm_bindgen_futures::spawn_local(async move {
-                let fetched_videos: Vec<Video> = Request::get("/tutorial/data.json")
-                    .send()
-                    .await
-                    .unwrap()
-                    .json()
-                    .await
-                    .unwrap();
-                videos.set(fetched_videos);
-            });
-            || ()
-        });
-    }
     html! {
         <>
             <h1>{ "RustConf Explorer" }</h1>
@@ -94,24 +76,35 @@ fn app() -> Html {
 }
 
 fn main() {
+    // "ws://127.0.0.1:8000/echo"
+    // "wss://mishka-party.online/echo"
+    let socket = create_socket("ws://127.0.0.1:8000/echo");
 
     yew::Renderer::<App>::new().render();
 }
 
-// fn load_videos(videos: &UseStateHandle<Vec<Video>>) {
-//     let videos = videos.clone();
-//     use_effect_with((), move |_| {
-//         let videos = videos.clone();
-//         wasm_bindgen_futures::spawn_local(async move {
-//             let fetched_videos: Vec<Video> = Request::get("https://yew.rs/tutorial/data.json")
-//                 .send()
-//                 .await
-//                 .unwrap()
-//                 .json()
-//                 .await
-//                 .unwrap();
-//             videos.set(fetched_videos);
-//         });
-//         || ()
-//     });
-// }
+use wasm_bindgen::prelude::*;
+use web_sys::{ErrorEvent, MessageEvent, WebSocket};
+
+macro_rules! console_log {
+    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
+fn create_socket(url: &str) -> WebSocket {
+    let mut socket = WebSocket::new(url)
+        .expect("Failed to create WebSocket");
+    let onmessage_callback = Closure::<dyn FnMut(_)>::new(move |e: MessageEvent| {
+        console_log!("Message: {:?}", e.data().as_string().unwrap());
+    });
+    // set message event handler on WebSocket
+    socket.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
+    // forget the callback to keep it alive
+    onmessage_callback.forget();
+    socket
+}

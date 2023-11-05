@@ -1,4 +1,4 @@
-[tasks.build]
+[tasks.release]
 command = "cargo"
 args = ["build", "--release"]
 

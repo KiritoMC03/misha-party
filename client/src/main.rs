@@ -81,8 +81,8 @@ fn app() -> Html {
 fn main() {
     // "ws://127.0.0.1:8000/echo"
     // "wss://mishka-party.online/echo"
-    let send_socket = create_socket("ws://127.0.0.1:8000/send-sound");
-    let receive_socket = create_socket("ws://127.0.0.1:8000/receive-sound");
+    let send_socket = create_socket("wss://mishka-party.online/send-sound");
+    let receive_socket = create_socket("wss://mishka-party.online/receive-sound");
 
 
     let send_socket_clone = send_socket.clone();

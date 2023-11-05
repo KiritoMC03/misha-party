@@ -1,8 +1,7 @@
 use args::*;
 use rocket::fs::NamedFile;
-use rocket::tokio::sync::Mutex;
-use rocket::{catchers, get, launch, routes};
-use rocket_ws::{Stream, WebSocket};
+use rocket::{catchers, get, launch, routes, State};
+use rocket_ws::{Channel, Message, WebSocket};
 use std::path::Path;
 
 mod args;
@@ -14,12 +13,11 @@ fn rocket() -> _ {
     println!("{:?}", std::env::current_dir());
     println!("{:?}", std::env::args().collect::<String>());
 
+    let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
     let args = Args::read_env();
     let mut server = rocket::build()
-        .mount("/", routes![index, favicon, js, wasm, echo_stream])
-        .manage(Sockets {
-            _list: Mutex::new(Vec::new()),
-        })
+        .mount("/", routes![index, favicon, js, wasm, receive_sound, send_sound])
+        .manage(Sockets {sender,receiver})
         .register("/", catchers![catchers::not_found]);
 
     server = debugging::attach(server, &args);
@@ -33,21 +31,34 @@ async fn index() -> Option<NamedFile> {
     NamedFile::open(Path::new("./static/index.html")).await.ok()
 }
 
-#[get("/echo")]
-async fn echo_stream(ws: WebSocket) -> Stream!['static] {
+#[get("/receive-sound")] // receive - for client
+async fn receive_sound(ws: WebSocket, sockets: &State<Sockets>) -> Channel<'static> {
     println!("Socket received");
-    // sockets.list.lock().await.push(ws);
+    use rocket::futures::{SinkExt};
 
-    ws.stream(|io| {
-        io
-    })
-    // Stream! { ws =>
-    //     for await message in ws {
-    //         let message = message.unwrap();
-    //         println!("WebSocket message: \"{}\"", message);
-    //         yield message;
-    //     }
-    // }
+    let receiver = sockets.receiver.clone();
+    ws.channel(move |mut stream| Box::pin(async move {
+        for message in receiver.iter() {
+            let _ = stream.send(message).await;
+        }
+
+        Ok(())
+    }))
+}
+
+#[get("/send-sound")] // send - for client
+async fn send_sound(ws: WebSocket, sockets: &State<Sockets>) -> Channel<'static> {
+    println!("Socket received");
+    use rocket::futures::{StreamExt};
+
+    let sender = sockets.sender.clone();
+    ws.channel(move |mut stream| Box::pin(async move {
+        while let Some(message) = stream.next().await {
+            let _ = sender.send(message?);
+        }
+
+        Ok(())
+    }))
 }
 
 #[get("/favicon.ico")]
@@ -72,5 +83,6 @@ async fn wasm() -> Option<NamedFile> {
 }
 
 struct Sockets {
-    pub _list: Mutex<Vec<WebSocket>>,
+    pub sender: crossbeam::channel::Sender<Message>,
+    pub receiver: crossbeam::channel::Receiver<Message>,
 }

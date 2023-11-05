@@ -1,5 +1,8 @@
 use yew::prelude::*;
 use serde::Deserialize;
+use wasm_bindgen::closure::IntoWasmClosure;
+use wasm_bindgen::prelude::*;
+use web_sys::{ErrorEvent, MessageEvent, WebSocket, window};
 
 #[derive(Clone, PartialEq, Deserialize)]
 struct Video {
@@ -78,13 +81,32 @@ fn app() -> Html {
 fn main() {
     // "ws://127.0.0.1:8000/echo"
     // "wss://mishka-party.online/echo"
-    let socket = create_socket("ws://127.0.0.1:8000/echo");
+    let send_socket = create_socket("ws://127.0.0.1:8000/send-sound");
+    let receive_socket = create_socket("ws://127.0.0.1:8000/receive-sound");
+
+
+    let send_socket_clone = send_socket.clone();
+    let on_open: Closure<dyn Fn()> = Closure::new(move || {
+        let _ = send_socket_clone.send_with_str(format!("kuku epta").as_str());
+    });
+
+
+    send_socket.set_onopen(Some(on_open.as_ref().unchecked_ref()));
+    on_open.forget();// It is not good practice, just for simplification!
+
+
+    let send_socket_clone = send_socket.clone();
+    let on_message: Closure<dyn Fn(_)> = Closure::new(move |e: MessageEvent| {
+        log(format!("New Message: {:?}", e.data().as_string()).as_str());
+        let _ = send_socket_clone.send_with_str(format!("kuku epta").as_str());
+    });
+
+    receive_socket.set_onmessage(Some(on_message.as_ref().unchecked_ref()));
+    on_message.forget(); // It is not good practice, just for simplification!
+
 
     yew::Renderer::<App>::new().render();
 }
-
-use wasm_bindgen::prelude::*;
-use web_sys::{ErrorEvent, MessageEvent, WebSocket};
 
 macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
@@ -107,4 +129,13 @@ fn create_socket(url: &str) -> WebSocket {
     // forget the callback to keep it alive
     onmessage_callback.forget();
     socket
+}
+
+fn set_timeout(window: &web_sys::Window, f: &Closure<dyn Fn()>, timeout_ms: i32) -> i32 {
+    window
+        .set_timeout_with_callback_and_timeout_and_arguments_0(
+            f.as_ref().unchecked_ref(),
+            timeout_ms,
+        )
+        .expect("should register `setTimeout` OK")
 }

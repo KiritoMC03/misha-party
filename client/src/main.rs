@@ -1,8 +1,8 @@
+use js_sys::Math::random;
 use yew::prelude::*;
 use serde::Deserialize;
-use wasm_bindgen::closure::IntoWasmClosure;
 use wasm_bindgen::prelude::*;
-use web_sys::{ErrorEvent, MessageEvent, WebSocket, window};
+use web_sys::{MessageEvent, WebSocket};
 
 #[derive(Clone, PartialEq, Deserialize)]
 struct Video {
@@ -79,33 +79,50 @@ fn app() -> Html {
 }
 
 fn main() {
-    // "ws://127.0.0.1:8000/echo"
-    // "wss://mishka-party.online/echo"
-    let send_socket = create_socket("wss://mishka-party.online/send-sound");
-    let receive_socket = create_socket("wss://mishka-party.online/receive-sound");
+    let income_addr = if cfg!(debug_assertions) {
+        "ws://127.0.0.1:8000/income"
+    } else {
+        "wss://mishka-party.online/income"
+    };
+    let outcome_addr = if cfg!(debug_assertions) {
+        "ws://127.0.0.1:8000/outcome"
+    } else {
+        "wss://mishka-party.online/outcome"
+    };
 
-
-    let send_socket_clone = send_socket.clone();
-    let on_open: Closure<dyn Fn()> = Closure::new(move || {
-        let _ = send_socket_clone.send_with_str(format!("kuku epta").as_str());
-    });
-
-
-    send_socket.set_onopen(Some(on_open.as_ref().unchecked_ref()));
-    on_open.forget();// It is not good practice, just for simplification!
-
-
-    let send_socket_clone = send_socket.clone();
-    let on_message: Closure<dyn Fn(_)> = Closure::new(move |e: MessageEvent| {
-        log(format!("New Message: {:?}", e.data().as_string()).as_str());
-        let _ = send_socket_clone.send_with_str(format!("kuku epta").as_str());
-    });
-
-    receive_socket.set_onmessage(Some(on_message.as_ref().unchecked_ref()));
-    on_message.forget(); // It is not good practice, just for simplification!
-
+    create_income_socket(income_addr, outcome_addr.to_string());
 
     yew::Renderer::<App>::new().render();
+}
+
+fn create_outcome_socket(url: &str) {
+    let outcome_socket = create_socket(url);
+
+    let outcome_socket_clone = outcome_socket.clone();
+    let outcome_on_open: Closure<dyn Fn()> = Closure::new(move || {
+        log(format!("outcome_on_open").as_str());
+        let _ = outcome_socket_clone.send_with_str(format!("kuku epta {}", random()).as_str());
+    });
+    outcome_socket.set_onopen(Some(outcome_on_open.as_ref().unchecked_ref()));
+    outcome_on_open.forget();// It is not good practice, just for simplification!
+}
+
+fn create_income_socket(url: &str, outcome_addr: String) {
+    // let outcome_socket_clone = outcome_socket.clone();
+    let on_open: Closure<dyn Fn()> = Closure::new(move || {
+        log(format!("income_on_open").as_str());
+        create_outcome_socket(outcome_addr.as_str());
+    });
+    let on_message: Closure<dyn Fn(_)> = Closure::new(move |e: MessageEvent| {
+        log(format!("New Message: {:?}", e.data().as_string()).as_str());
+        // let _ = send_socket_clone.send_with_str(format!("kuku epta").as_str());
+    });
+    let income_socket = create_socket(url);
+    income_socket.set_onopen(Some(on_open.as_ref().unchecked_ref()));
+    income_socket.set_onmessage(Some(on_message.as_ref().unchecked_ref()));
+
+    on_message.forget(); // It is not good practice, just for simplification!
+    on_open.forget(); // It is not good practice, just for simplification!
 }
 
 macro_rules! console_log {
@@ -119,7 +136,7 @@ extern "C" {
 }
 
 fn create_socket(url: &str) -> WebSocket {
-    let mut socket = WebSocket::new(url)
+    let socket = WebSocket::new(url)
         .expect("Failed to create WebSocket");
     let onmessage_callback = Closure::<dyn FnMut(_)>::new(move |e: MessageEvent| {
         console_log!("Message: {:?}", e.data().as_string().unwrap());
@@ -129,13 +146,4 @@ fn create_socket(url: &str) -> WebSocket {
     // forget the callback to keep it alive
     onmessage_callback.forget();
     socket
-}
-
-fn set_timeout(window: &web_sys::Window, f: &Closure<dyn Fn()>, timeout_ms: i32) -> i32 {
-    window
-        .set_timeout_with_callback_and_timeout_and_arguments_0(
-            f.as_ref().unchecked_ref(),
-            timeout_ms,
-        )
-        .expect("should register `setTimeout` OK")
 }

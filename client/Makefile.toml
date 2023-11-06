@@ -51,7 +51,7 @@ fn rename(extension: &str) {
 
     let new_name = format!("yew.{}", extension);
     let file =
-        glob::glob(format!("./../static/*.{}", extension).as_str())
+        glob::glob(format!("./../static_gen/*.{}", extension).as_str())
             .expect("Failed to read glob pattern")
             .nth(0)
             .unwrap()
@@ -63,7 +63,7 @@ fn rename(extension: &str) {
         dir.join(new_name.as_str()))
         .expect("Failed to rename file");
 
-    let html_path = "./../static/index.html";
+    let html_path = "./../static_gen/index.html";
     let mut html = File::open(html_path).expect("Failed to open index.html");
     let mut content = String::new();
     html.read_to_string(&mut content).expect("Failed to read index.html");

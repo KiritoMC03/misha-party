@@ -2,7 +2,7 @@ use js_sys::Math::random;
 use yew::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{AudioContext, MediaStream, MediaStreamConstraints, MessageEvent, WebSocket, window};
+use web_sys::{AudioContext, MediaRecorder, MediaStream, MediaStreamConstraints, MessageEvent, WebSocket, window};
 
 #[function_component(App)]
 fn app() -> Html {
@@ -43,7 +43,15 @@ fn listen(_e: MouseEvent) {
                 .media_devices().unwrap()
                 .get_user_media_with_constraints(&user_media_constraints).unwrap();
         let result = wasm_bindgen_futures::JsFuture::from(user_media).await.unwrap();
-        let _media_stream: MediaStream = result.unchecked_into();
+        let media_stream: MediaStream = result.unchecked_into();
+        let media_recorder = MediaRecorder::new_with_media_stream(&media_stream).unwrap();
+        media_recorder.start().unwrap();
+
+        let on_data_available: Closure<dyn Fn(_)> = Closure::new(move |event: Event| {
+            log(event.as_string().unwrap().as_str());
+        });
+        media_recorder.set_ondataavailable(Some(on_data_available.as_ref().unchecked_ref()));
+        on_data_available.forget(); // It is not good practice, just for simplification!
     });
 }
 

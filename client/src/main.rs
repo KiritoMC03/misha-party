@@ -1,79 +1,15 @@
 use js_sys::Math::random;
 use yew::prelude::*;
-use serde::Deserialize;
 use wasm_bindgen::prelude::*;
-use web_sys::{MessageEvent, WebSocket};
-
-#[derive(Clone, PartialEq, Deserialize)]
-struct Video {
-    id: usize,
-    title: String,
-    speaker: String,
-    url: String,
-}
-
-#[derive(Properties, PartialEq)]
-struct VideosListProps {
-    videos: Vec<Video>,
-    on_click: Callback<Video>,
-}
-
-#[derive(Properties, PartialEq)]
-struct VideosDetailsProps {
-    video: Video,
-}
-
-#[function_component(VideosList)]
-fn videos_list(VideosListProps { videos, on_click }: &VideosListProps) -> Html {
-    let on_click = on_click.clone();
-    videos.iter().map(|video| {
-        let on_video_select = {
-            let on_click = on_click.clone();
-            let video = video.clone();
-            Callback::from(move |_| {
-                on_click.emit(video.clone());
-            })
-        };
-
-        html! {
-            <p key={video.id} onclick={on_video_select}>{format!("{}: {}", video.speaker, video.title)}</p>
-        }
-    }).collect()
-}
-
-#[function_component(VideoDetails)]
-fn video_details(VideosDetailsProps { video }: &VideosDetailsProps) -> Html {
-    html! {
-        <div>
-            <h3>{ video.title.clone() }</h3>
-            <img src="https://via.placeholder.com/640x360.png?text=Video+Player+Placeholder" alt="video thumbnail" />
-        </div>
-    }
-}
+use wasm_bindgen_futures::spawn_local;
+use web_sys::{AudioContext, MediaStream, MediaStreamConstraints, MessageEvent, WebSocket, window};
 
 #[function_component(App)]
 fn app() -> Html {
-    let videos = use_state(|| vec![]);
-    let selected_video = use_state(|| None);
-    let on_video_select = {
-        let selected_video = selected_video.clone();
-        Callback::from(move |video: Video| {
-            selected_video.set(Some(video))
-        })
-    };
-
-    let details = selected_video.as_ref().map(|video| html! {
-        <VideoDetails video={video.clone()} />
-    });
-
-    html! {
+        html! {
         <>
-            <h1>{ "RustConf Explorer" }</h1>
-            <div>
-                <h3>{"Videos to watch"}</h3>
-                <VideosList videos={(*videos).clone()} on_click={on_video_select.clone()} />
-            </div>
-            { for details }
+            <button onclick={listen}>{ "Start recording" }</button>
+            <h1>{ "Hello!!!!!!" }</h1>
         </>
     }
 }
@@ -93,6 +29,22 @@ fn main() {
     create_income_socket(income_addr, outcome_addr.to_string());
 
     yew::Renderer::<App>::new().render();
+}
+
+fn listen(_e: MouseEvent) {
+    spawn_local(async {
+        let _ac = AudioContext::new();
+        let audio_enabled = &JsValue::from_bool(true);
+        let mut user_media_constraints = MediaStreamConstraints::new();
+        user_media_constraints.audio(audio_enabled);
+        let user_media =
+            window().unwrap()
+                .navigator()
+                .media_devices().unwrap()
+                .get_user_media_with_constraints(&user_media_constraints).unwrap();
+        let result = wasm_bindgen_futures::JsFuture::from(user_media).await.unwrap();
+        let _media_stream: MediaStream = result.unchecked_into();
+    });
 }
 
 fn create_outcome_socket(url: &str) {

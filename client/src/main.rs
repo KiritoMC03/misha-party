@@ -1,8 +1,15 @@
+use std::any::Any;
+use std::sync::Arc;
+use std::thread::park_timeout;
+use std::time::Duration;
+use js_sys::{ArrayBuffer, Function, JsString, Promise};
 use js_sys::Math::random;
+use wasm_bindgen::closure::WasmClosureFnOnce;
 use yew::prelude::*;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::spawn_local;
-use web_sys::{AudioContext, MediaRecorder, MediaStream, MediaStreamConstraints, MessageEvent, WebSocket, window};
+use wasm_bindgen_futures::{future_to_promise, spawn_local};
+use web_sys::{AudioContext, Blob, BlobEvent, MediaDevices, MediaRecorder, MediaStream, MediaStreamConstraints, MessageEvent, WebSocket, window};
+use yew::platform::time::sleep;
 
 #[function_component(App)]
 fn app() -> Html {
@@ -47,12 +54,69 @@ fn listen(_e: MouseEvent) {
         let media_recorder = MediaRecorder::new_with_media_stream(&media_stream).unwrap();
         media_recorder.start().unwrap();
 
-        let on_data_available: Closure<dyn Fn(_)> = Closure::new(move |event: Event| {
-            log(event.as_string().unwrap().as_str());
+        let on_data_available: Closure<dyn Fn(_)> = Closure::new(move |event: BlobEvent| {
+            if !event.is_null() {
+                match event.data() {
+                    None => {}
+                    Some(data) => {
+                        let promise = data.array_buffer();
+                        // let promise = data.array_buffer();
+                        spawn_local(async move {
+                            let result = wasm_bindgen_futures::JsFuture::from(promise).await;
+                            match result {
+                                Ok(val) => {
+                                    let buffer: ArrayBuffer = val.clone().into();
+                                    let len = buffer.byte_length();
+                                    log(format!("len: {:?}", len).as_str());
+                                    match js_sys::JSON::stringify(&val) {
+                                        Ok(v) => {
+                                            match v.to_string().as_string() {
+                                                None => {}
+                                                Some(str) => { log(str.as_str()) }
+                                            }
+                                        }
+                                        Err(_) => {}
+                                    }
+                                    // let r = js_sys::JSON::stringify(&val)
+                                    //     .map(String::from);
+                                    // match r {
+                                    //     Ok(s) => { log(s.as_str()) }
+                                    //     Err(_) => {}
+                                    // }
+                                    // match val.as_string() {
+                                    //     None => {}
+                                    //     Some(t) => {log(format!("type: {:?}", t).as_str())}
+                                    // }
+                                    // match val.as_string() {
+                                    //     None => {log("none string") }
+                                    //     Some(str) => {log(str.as_str())}
+                                    // }
+                                }
+                                Err(_) => {
+                                    log("empty result")
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+            else {
+                log("null");
+            }
         });
         media_recorder.set_ondataavailable(Some(on_data_available.as_ref().unchecked_ref()));
         on_data_available.forget(); // It is not good practice, just for simplification!
+        do_magic(media_recorder);
     });
+}
+
+fn do_magic(media_recorder: MediaRecorder) {
+    spawn_local(async move {
+        loop {
+            sleep(Duration::from_millis(100)).await;
+            let _ = media_recorder.request_data();
+        }
+    })
 }
 
 fn create_outcome_socket(url: &str) {

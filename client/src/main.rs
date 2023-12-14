@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::mem;
 use std::sync::Arc;
 use std::thread::park_timeout;
 use std::time::Duration;
@@ -8,7 +9,7 @@ use wasm_bindgen::closure::WasmClosureFnOnce;
 use yew::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::{future_to_promise, spawn_local};
-use web_sys::{AudioContext, Blob, BlobEvent, MediaDevices, MediaRecorder, MediaStream, MediaStreamConstraints, MessageEvent, WebSocket, window};
+use web_sys::{AudioBuffer, AudioContext, Blob, BlobEvent, HtmlAudioElement, MediaDevices, MediaRecorder, MediaStream, MediaStreamConstraints, MessageEvent, Url, WebSocket, window};
 use yew::platform::time::sleep;
 
 #[function_component(App)]
@@ -40,7 +41,6 @@ fn main() {
 
 fn listen(_e: MouseEvent) {
     spawn_local(async {
-        let _ac = AudioContext::new();
         let audio_enabled = &JsValue::from_bool(true);
         let mut user_media_constraints = MediaStreamConstraints::new();
         user_media_constraints.audio(audio_enabled);
@@ -54,6 +54,8 @@ fn listen(_e: MouseEvent) {
         let media_recorder = MediaRecorder::new_with_media_stream(&media_stream).unwrap();
         media_recorder.start().unwrap();
 
+        let url = web_sys::Url::new("http://127.0.0.1:8000/a.mp3").unwrap();
+        let audio_elem = HtmlAudioElement::new_with_src(url.as_str()).unwrap();
         let on_data_available: Closure<dyn Fn(_)> = Closure::new(move |event: BlobEvent| {
             if !event.is_null() {
                 match event.data() {
@@ -64,33 +66,22 @@ fn listen(_e: MouseEvent) {
                         spawn_local(async move {
                             let result = wasm_bindgen_futures::JsFuture::from(promise).await;
                             match result {
-                                Ok(val) => {
-                                    let buffer: ArrayBuffer = val.clone().into();
-                                    let len = buffer.byte_length();
-                                    log(format!("len: {:?}", len).as_str());
-                                    match js_sys::JSON::stringify(&val) {
-                                        Ok(v) => {
-                                            match v.to_string().as_string() {
-                                                None => {}
-                                                Some(str) => { log(str.as_str()) }
-                                            }
-                                        }
-                                        Err(_) => {}
-                                    }
-                                    // let r = js_sys::JSON::stringify(&val)
-                                    //     .map(String::from);
-                                    // match r {
-                                    //     Ok(s) => { log(s.as_str()) }
-                                    //     Err(_) => {}
-                                    // }
-                                    // match val.as_string() {
-                                    //     None => {}
-                                    //     Some(t) => {log(format!("type: {:?}", t).as_str())}
-                                    // }
-                                    // match val.as_string() {
-                                    //     None => {log("none string") }
-                                    //     Some(str) => {log(str.as_str())}
-                                    // }
+                                Ok(_) => {
+                                    // let buffer: ArrayBuffer = val.clone().into();
+                                    // let ac = AudioContext::new().unwrap();
+                                    // let r=  ac.decode_audio_data(&buffer).unwrap();
+                                    // let acr = wasm_bindgen_futures::JsFuture::from(r).await.unwrap();
+                                    // let audio_buff: AudioBuffer = acr.into();
+                                    // let blob = Blob::new_with_buffer_source_sequence(&buffer).unwrap();
+                                    let url = web_sys::Url::create_object_url_with_blob(&data).unwrap();
+                                    log("1");
+                                    let audio_elem = HtmlAudioElement::new_with_src(url.as_str()).unwrap();
+                                    log("2");
+                                    let play = audio_elem.play().unwrap();
+                                    log("3");
+                                    let _ = wasm_bindgen_futures::JsFuture::from(play).await;
+                                    audio_elem.remove();
+                                    log("4");
                                 }
                                 Err(_) => {
                                     log("empty result")
